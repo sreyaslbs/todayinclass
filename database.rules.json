@@ -1,0 +1,24 @@
+{
+    "rules": {
+        "users": {
+            "$uid": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && (auth.uid == $uid || root.child('users').child(auth.uid).child('role').val() == 'admin')"
+            }
+        },
+        "classes": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        },
+        "dailyUpdates": {
+            ".read": "auth != null",
+            "$updateId": {
+                ".write": "auth != null && (
+          root.child('users').child(auth.uid).child('role').val() == 'admin' ||
+          (root.child('users').child(auth.uid).child('role').val() == 'teacher' && 
+           data.child('teacherId').val() == auth.uid)
+        )"
+            }
+        }
+    }
+}

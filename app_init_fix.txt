@@ -1,0 +1,34 @@
+// TodayInClass - Main Application Logic
+
+class TodayInClassApp {
+  constructor() {
+    this.state = {
+      currentUser: null,
+      classes: [],
+      dailyUpdates: [],
+      activeTab: 'classes',
+      selectedDate: this.getTodayDate()
+    };
+    
+    this.unsubscribers = [];
+  }
+
+  // Initialize the application
+  async init() {
+    // Check for redirect result first (for Google Sign-In redirect)
+    await authManager.getRedirectResult();
+    
+    // Initialize authentication
+    authManager.init((user) => {
+      this.state.currentUser = user;
+      if (user) {
+        this.showApp();
+        this.loadData();
+      } else {
+        this.showLogin();
+      }
+    });
+    
+    // Set up event listeners
+    this.setupEventListeners();
+  }
