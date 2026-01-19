@@ -4,6 +4,9 @@ class AuthManager {
     constructor() {
         this.currentUser = null;
         this.onAuthStateChangedCallback = null;
+        this.adminEmails = [
+            'mailsuren2019@gmail.com'
+        ];
         console.log('🔧 AuthManager: Constructor called');
     }
 
@@ -22,33 +25,40 @@ class AuthManager {
                 try {
                     console.log('📖 AuthManager: Fetching user document from Firestore...');
                     const userDoc = await db.collection('users').doc(user.uid).get();
+                    const isHardcodedAdmin = user.email && this.adminEmails.includes(user.email.toLowerCase());
 
                     if (userDoc.exists) {
                         console.log('✅ AuthManager: User document found in Firestore');
+                        const data = userDoc.data();
                         this.currentUser = {
                             uid: user.uid,
                             email: user.email,
                             displayName: user.displayName,
                             photoURL: user.photoURL,
-                            role: userDoc.data().role || 'parent'
+                            role: isHardcodedAdmin ? 'admin' : (data.role || 'parent')
                         };
+
+                        // If they are hardcoded admin but don't have the role in DB, update DB
+                        if (isHardcodedAdmin && data.role !== 'admin') {
+                            await db.collection('users').doc(user.uid).update({ role: 'admin' });
+                        }
                         console.log('👤 AuthManager: Current user role:', this.currentUser.role);
                     } else {
                         console.log('⚠️ AuthManager: User document not found, creating new one...');
-                        // Create new user document with default role
+                        const role = isHardcodedAdmin ? 'admin' : 'parent';
                         this.currentUser = {
                             uid: user.uid,
                             email: user.email,
                             displayName: user.displayName,
                             photoURL: user.photoURL,
-                            role: 'parent' // Default role
+                            role: role
                         };
 
                         await db.collection('users').doc(user.uid).set({
                             email: user.email,
                             displayName: user.displayName,
                             photoURL: user.photoURL,
-                            role: 'parent',
+                            role: role,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         console.log('✅ AuthManager: New user document created');
